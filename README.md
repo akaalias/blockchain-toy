@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/akaalias/blockchain-toy.svg?branch=master)](https://travis-ci.org/akaalias/blockchain-toy)
+
 # Calculating Nonces That Result In Zero-Padded SHA256 Hashes
 
 I _had_ to play around with implementing a toy (read: unoptimized!) algorithm to "mine" for nonces that, when added to the hashing input, produces n zeros at the beginning of the hash:
