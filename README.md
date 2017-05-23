@@ -10,7 +10,7 @@ Let's say we have "foo" and "bar" as our input and would like to hash with anoth
 
 To calculate that unknown value, the nonce, for 1 zero padding at the front, run
 
-```
+```clojure
 ((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0)
 ;; => The nonce value is 20
 ```
@@ -19,14 +19,14 @@ To calculate that unknown value, the nonce, for 1 zero padding at the front, run
 
 It takes less than a millisecond to compute:
 
-```
+```clojure
 (time ((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0))
 "Elapsed time: 0.439503 msecs"
 ```
 
 Now, let's say you want to go up a notch and find the nonce that produces a hash with 2 zeros at the beginning. We have to increase how far we are willing to look, by increasing the max from 100 to 1000
 
-```
+```clojure
 ((make-nonce-for-zeros-finder 2 1000) "foo" "bar" 0)
 ;; => The nonce value is 102
 ```
@@ -35,7 +35,7 @@ The hash for `"foo" x "bar" x 102` is "006668bba91b7e2d5b5357b56600784edb77a72ec
 
 This will take slightly longer, 8 milliseconds:
 
-```
+```clojure
 (time ((make-nonce-for-zeros-finder 2 1000) "foo" "bar" 0))
 "Elapsed time: 8.936003 msecs"
 ```
@@ -44,14 +44,14 @@ You can, if you want to, increase how many zeros you want in the beginning but y
 
 Finding a hash with 6 zeros padded, takes about a minute now
 
-```
+```clojure
 (time ((make-nonce-for-zeros-finder 6 5000000) "foo" "bar" 0))
 "Elapsed time: 64540.793452 msecs"
 ```
 
 The actual code is short and reads reasonably well. The only messy part is that I have to manually create the matching string pattern by hand and, I guess, there is no way around getting the substring of the generated hash much easier...
 
-```
+```clojure
 (defn make-nonce-for-zeros-finder [z-count max]
   (fn [num data nonce]
     (cond (> nonce max) nil
