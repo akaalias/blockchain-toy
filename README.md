@@ -1,6 +1,6 @@
-# blockchain-toy
+# Calculating Nonces That Result In Zero-Padded SHA256 Hashes
 
-Playing around with how hard it is to implement a toy (read: unoptimized!) algorithm to mine for nonces that, when added to the hashing input, produces n zeros at the beginning of the hash:
+I _had_ to play around with implementing a toy (read: unoptimized!) algorithm to "mine" for nonces that, when added to the hashing input, produces n zeros at the beginning of the hash:
 
 I came up with `make-nonce-for-zeros-finder`, a function which takes the numbers of zeros you want to have at the beginning and a maximum search-depth and returns a function that will calculate the nonce for your inputs.
 
