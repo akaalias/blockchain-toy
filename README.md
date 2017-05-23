@@ -1,20 +1,18 @@
 # blockchain-toy
 
-Playing around with how hard it is to implement a recursive toy algorithm to mine for nonces that, when added to the hashing input, produces n zeros at the beginning of the hash:
+Playing around with how hard it is to implement a toy (read: unoptimized!) algorithm to mine for nonces that, when added to the hashing input, produces n zeros at the beginning of the hash:
 
-I wanted to see how I can implement it using recursion as I've learned it recently and how to write a function that returns functions so that I can play around with different padding and search-depth variations quickly.
-
-I came up with `make-nonce-for-zeros-finder` which takes the numbers of zeros you want to have at the beginning and a maximum search-depth. 
+I came up with `make-nonce-for-zeros-finder`, a function which takes the numbers of zeros you want to have at the beginning and a maximum search-depth and returns a function that will calculate the nonce for your inputs.
 
 ## How to use
 
 Let's say we have "foo" and "bar" as our input and would like to hash with another, yet unknown value, so that the hash that combines the three returns a hash with 1 zero at the beginning. 
 
-To calculate that unknown value for 1 zero padding at the front, run
+To calculate that unknown value, the nonce, for 1 zero padding at the front, run
 
 ```
 ((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0)
-;; The nonce value is 20
+;; => The nonce value is 20
 ```
 
 (The hash for `"foo" x "bar" x 20` is "0fdc57809f5917eba08907d2805e43ce83f4c933a090b4a2b2549923a35e43d7")
@@ -22,7 +20,7 @@ To calculate that unknown value for 1 zero padding at the front, run
 It takes less than a millisecond to compute:
 
 ```
- (time ((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0))
+(time ((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0))
 "Elapsed time: 0.439503 msecs"
 ```
 
@@ -30,7 +28,7 @@ Now, let's say you want to go up a notch and find the nonce that produces a hash
 
 ```
 ((make-nonce-for-zeros-finder 2 1000) "foo" "bar" 0)
-;; The nonce value is 102
+;; => The nonce value is 102
 ```
 
 The hash for `"foo" x "bar" x 102` is "006668bba91b7e2d5b5357b56600784edb77a72ecf86dc09d515853a841485f6". (Note the two zeros at the beginning.)
@@ -47,7 +45,7 @@ You can, if you want to, increase how many zeros you want in the beginning but y
 Finding a hash with 6 zeros padded, takes about a minute now
 
 ```
- (time ((make-nonce-for-zeros-finder 6 5000000) "foo" "bar" 0))
+(time ((make-nonce-for-zeros-finder 6 5000000) "foo" "bar" 0))
 "Elapsed time: 64540.793452 msecs"
 ```
 
