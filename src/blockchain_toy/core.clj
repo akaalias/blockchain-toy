@@ -47,4 +47,16 @@
 (def find-nonce-for-five-zeros-padded-hash
   (make-nonce-for-zeros-finder 5))
 
+(def find-nonce-for-six-zeros-padded-hash
+  (make-nonce-for-zeros-finder 6))
+
+(def find-nonce-for-seven-zeros-padded-hash
+  (make-nonce-for-zeros-finder 7))
+
+(def find-nonce-for-eight-zeros-padded-hash
+  (make-nonce-for-zeros-finder 8))
+
 ;; and so on...
+
+;; (time (find-nonce-for-eight-zeros-padded-hash "foo" "bar"))
+

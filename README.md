@@ -6,72 +6,96 @@ Yesterday I watched [Anders Brownworth's awesome Blockchain demo](https://github
 
 I _had_ to play around with implementing a toy (read: unoptimized!) algorithm to "mine" for nonces that, when added to the hashing input, produces n zeros at the beginning of the hash:
 
-I came up with `make-nonce-for-zeros-finder`, a function which takes the numbers of zeros you want to have at the beginning and a maximum search-depth and returns a function that will calculate the nonce for your inputs.
+I came up with `make-nonce-for-zeros-finder`, a function which takes the numbers of zeros you want to have at the beginning and a maximum search-depth and returns a function that will calculate the right nonce for your inputs.
 
-## How to use
-
-Let's say we have "foo" and "bar" as our input and would like to hash with another, yet unknown value, so that the hash that combines the three returns a hash with 1 zero at the beginning. 
-
-To calculate that unknown value, the nonce, for 1 zero padding at the front, run
+What I personally enjoyed about this little exercise was to express an iterative process in a simple recursive function. And to make a function-maker once I wanted to play around with different types of hashes/nonces I wanted to find.
 
 ```clojure
-((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0)
-;; => The nonce value is 20
+(with-test
+  (defn make-nonce-for-zeros-finder [z-count]
+    (fn
+      ([num data]
+       ((make-nonce-for-zeros-finder z-count) num data 0))
+      ([num data nonce]
+       (cond (= (generate-zeros-string z-count) (subs (generate-hash num data nonce) 0 z-count)) nonce
+             :else (recur num data (inc nonce))))))
+
+  (is (= ((make-nonce-for-zeros-finder 1) nil nil) 39))
+  (is (= ((make-nonce-for-zeros-finder 1) 1 nil) 25))
+  (is (= ((make-nonce-for-zeros-finder 1) 1 1) 11))
+  (is (= ((make-nonce-for-zeros-finder 1) "foo" "bar" 0) 20))
+  (is (= ((make-nonce-for-zeros-finder 2) nil nil) 286))
+  (is (= ((make-nonce-for-zeros-finder 4) nil nil) 88484))
+  (is (= ((make-nonce-for-zeros-finder 4) 1 1) 64840))
+  (is (= ((make-nonce-for-zeros-finder 4) "foo" "bar") 42515)))
 ```
 
-(The hash for `"foo" x "bar" x 20` is "0fdc57809f5917eba08907d2805e43ce83f4c933a090b4a2b2549923a35e43d7")
-
-It takes less than a millisecond to compute:
+With it, I can quickly create finders for different lengths of zero paddings:
 
 ```clojure
-(time ((make-nonce-for-zeros-finder 1 100) "foo" "bar" 0))
-"Elapsed time: 0.439503 msecs"
+(def find-nonce-for-one-zero-padded-hash
+  (make-nonce-for-zeros-finder 1))
+
+(def find-nonce-for-two-zeros-padded-hash
+  (make-nonce-for-zeros-finder 2))
+
+(def find-nonce-for-three-zeros-padded-hash
+  (make-nonce-for-zeros-finder 3))
+
+(def find-nonce-for-four-zeros-padded-hash
+  (make-nonce-for-zeros-finder 4))
+
+(def find-nonce-for-five-zeros-padded-hash
+  (make-nonce-for-zeros-finder 5))
+
+(def find-nonce-for-six-zeros-padded-hash
+  (make-nonce-for-zeros-finder 6))
+
+;; and so on...
+
 ```
 
-Now, let's say you want to go up a notch and find the nonce that produces a hash with 2 zeros at the beginning. We have to increase how far we are willing to look, by increasing the max from 100 to 1000
+With these guys set up, we can now calculate the nonce for hashes with 1, 2, 3, 4 and 5 zeros padded. Let's see how that looks:
 
 ```clojure
-((make-nonce-for-zeros-finder 2 1000) "foo" "bar" 0)
-;; => The nonce value is 102
+(find-nonce-for-one-zero-padded-hash "foo" "bar")
+;; => 20
+;; takes less than a millisecond
+
+;; we can verify that the hash has one zero at the beginning:
+(generate-hash "foo" "bar" 20)
+;; => "0fdc57809f5917eba08907d2805e43ce83f4c933a090b4a2b2549923a35e43d7"
+
+(find-nonce-for-two-zeros-padded-hash "foo" "bar")
+;; => 102
+;; takes less than a millisecond
+
+;; we can verify that the hash has two zeros at the beginning:
+(generate-hash "foo" "bar" 102)
+;; => "006668bba91b7e2d5b5357b56600784edb77a72ecf86dc09d515853a841485f6"
+
+(find-nonce-for-three-zeros-padded-hash "foo" "bar")
+;; => 4663
+;; takes less than a millisecond
+
+;; we can verify that the hash has three zeros at the beginning:
+(generate-hash "foo" "bar" 4663)
+;; => "0005d9cd6c13fe6bf56e169fd2a7008003fc3a4c6539f8a1cf7d82975d00210e"
+
 ```
 
-The hash for `"foo" x "bar" x 102` is "006668bba91b7e2d5b5357b56600784edb77a72ecf86dc09d515853a841485f6". (Note the two zeros at the beginning.)
+And that's really all there is to it. Once you cross 6 padded zeros, you'll notice an increase in time it takes to compute.
 
-This will take slightly longer, 8 milliseconds:
-
-```clojure
-(time ((make-nonce-for-zeros-finder 2 1000) "foo" "bar" 0))
-"Elapsed time: 8.936003 msecs"
-```
-
-You can, if you want to, increase how many zeros you want in the beginning but you'll have to adjust the max search depth accordingly. The more zeros you want and, I believe the longer the input is, the longer it will take to calcualate the nonce:
-
-Finding a hash with 6 zeros padded, takes about a minute now
-
-```clojure
-(time ((make-nonce-for-zeros-finder 6 5000000) "foo" "bar" 0))
-"Elapsed time: 64540.793452 msecs"
-```
-
-The actual code is short and reads reasonably well. The only messy part is that I have to manually create the matching string pattern by hand and, I guess, there is no way around getting the substring of the generated hash much easier...
-
-```clojure
-(defn make-nonce-for-zeros-finder [z-count max]
-  (fn [num data nonce]
-    (cond (> nonce max) nil
-          (= (clojure.string/join (repeat z-count "0")) (subs (generate-hash num data nonce) 0 z-count)) nonce
-          :else (recur num data (inc nonce)))))
-```
 
 ## How to test
 
 I've been a huge fan of the `with-test` macro. Because of that, you'll find all test-coverage in core.clj instead of a separate "_test.clj" file.
 
-Run `lein test`
+To run all tests, use `lein test`
 
 ## License
 
-Copyright © 2017 FIXME
+Copyright © 2017 Alexis Rondeau
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
